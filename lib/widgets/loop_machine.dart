@@ -21,6 +21,7 @@ class LoopMachine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Panel(
       title: 'loop machine',
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth > 420;
@@ -81,7 +82,7 @@ class LoopMachine extends StatelessWidget {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
         color: on
             ? (id == 'done' ? AppColors.dangerSoft : AppColors.activeSoft)
@@ -93,25 +94,29 @@ class LoopMachine extends StatelessWidget {
           width: on ? 2 : 1,
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: AppTheme.mono(
-              size: 13,
-              weight: FontWeight.w600,
-              color: color,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppTheme.mono(
+                size: 13,
+                weight: FontWeight.w600,
+                color: color,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: AppTheme.ui(size: 11, color: AppColors.dim),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: AppTheme.ui(size: 11, color: AppColors.dim),
+            ),
+          ],
+        ),
       ),
     );
   }

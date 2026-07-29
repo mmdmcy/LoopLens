@@ -125,7 +125,7 @@ class _WorkspaceState extends State<Workspace> {
     return Column(
       children: [
         SizedBox(
-          height: 110,
+          height: 128,
           child: LoopMachine(focus: step.machineFocus),
         ),
         const SizedBox(height: 8),
