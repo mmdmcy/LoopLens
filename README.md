@@ -1,39 +1,59 @@
 # LoopLens
 
-LoopLens is an interactive code visualizer for people who need to see what a program does, not only read what it says. It pairs the active source line with changing variables, data movement, condition results, and console output.
+Desktop app that steps through code so you can *see* what each line does.
 
-The first release focuses on small, carefully explained JavaScript examples:
+Built for the moment before a real debugger helps — when you still need a
+mental model of control flow and state. First showcase: a Python `for` loop.
 
-- A classic indexed `for` loop
-- A running total with `for...of`
-- A `while` loop countdown
+```python
+for i in range(3):
+    print(i)
+```
 
-## Why
+## What you see
 
-Most debuggers assume you already understand the execution model. LoopLens is designed for the step before that: building an intuition for control flow and state.
+| Panel | Purpose |
+| --- | --- |
+| **Source** | Active line highlighted as execution moves |
+| **Loop machine** | `range → next? → assign i → body → exit` |
+| **Sequence** | The values in `range(3)` with a moving cursor |
+| **Variables** | Live `i` (pulses when it changes) |
+| **Console** | `print` output as it appears |
+| **Narration** | Plain-English explanation of the current step |
 
-## Run locally
+Controls: **Space** play/pause · **← →** step · **R** reset · speed button · scrubber
 
-No package manager, build step, or dependencies are required. Open `index.html`
-directly in a browser, or serve the folder with any static file server.
+## Run
 
-Use the on-screen controls, arrow keys to step, or the space bar to play and pause.
+Requires [Flutter](https://flutter.dev) with desktop enabled.
 
-## Scope
+```bash
+flutter pub get
+flutter run -d linux    # or macos / windows
+```
 
-LoopLens currently uses curated execution traces. It does not evaluate pasted code. That keeps the visual explanations precise and avoids presenting a partial parser as a complete JavaScript runtime.
+## Why curated traces
 
-Useful next contributions include additional examples, trace authoring tools, accessibility improvements, and support for safely instrumented user code.
+LoopLens uses hand-authored execution steps, not a live Python interpreter.
+That keeps every transition explicit and beginner-accurate. Pasting arbitrary
+code is intentionally out of scope for now.
 
-## Project structure
+## Project layout
 
-- `index.html` contains the page shell
-- `styles.css` contains the responsive visual design
-- `app.js` contains the examples, execution traces, and player
+```
+lib/
+  main.dart                 # workspace shell
+  data/python_for_loop.dart # example + step trace
+  models/                   # ExecutionStep, CodeExample
+  state/player_controller.dart
+  theme/app_theme.dart
+  widgets/                  # panels + transport controls
+```
 
 ## Contributing
 
-Issues and pull requests are welcome. Keep examples small, make every state transition explicit, and write explanations for beginners without sacrificing technical accuracy.
+Issues and PRs welcome. Keep examples small, make every state change obvious,
+and write explanations for people who are still learning loops.
 
 ## License
 
