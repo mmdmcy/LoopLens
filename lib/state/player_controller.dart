@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../data/python_for_loop.dart';
+import '../data/examples.dart';
 import '../models/execution_step.dart';
 
 class PlayerController extends ChangeNotifier {
   PlayerController({CodeExample? example})
-      : _example = example ?? pythonForRange;
+      : _example = example ?? cppForLoop;
 
   CodeExample _example;
   int _stepIndex = 0;
@@ -46,11 +46,10 @@ class PlayerController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void stepForward() {
-    if (atEnd) {
-      pause();
-      return;
-    }
+  /// Manual steps pause autoplay so you can scrub freely.
+  void stepForward({bool manual = true}) {
+    if (manual) pause();
+    if (atEnd) return;
     _stepIndex++;
     notifyListeners();
     if (atEnd) pause();
@@ -110,7 +109,7 @@ class PlayerController extends ChangeNotifier {
         pause();
         return;
       }
-      stepForward();
+      stepForward(manual: false);
       if (_playing && !atEnd) _schedule();
     });
   }

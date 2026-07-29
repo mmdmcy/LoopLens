@@ -1,81 +1,74 @@
 enum StepPhase {
-  setup,
-  enter,
-  assign,
-  check,
+  init,
+  condition,
   body,
-  advance,
-  complete,
+  increment,
+  done,
 }
 
-class Comparison {
-  const Comparison({
-    required this.left,
-    required this.operator,
-    required this.right,
-    required this.result,
-  });
-
-  final Object left;
-  final String operator;
-  final Object right;
-  final bool result;
+/// Which piece of the classic for-header is lit.
+enum ForSlot {
+  init,
+  condition,
+  increment,
+  body,
+  none,
 }
 
 class ExecutionStep {
   const ExecutionStep({
-    required this.line,
     required this.phase,
-    required this.title,
+    required this.slot,
     required this.explanation,
-    required this.variables,
+    required this.i,
     this.output = const [],
     this.focusIndex,
-    this.changed,
-    this.comparison,
-    this.machineFocus,
+    this.conditionText,
+    this.conditionPass,
   });
 
-  /// 1-based source line. Null = no highlight.
-  final int? line;
   final StepPhase phase;
-  final String title;
+  final ForSlot slot;
   final String explanation;
-  final Map<String, Object?> variables;
+
+  /// Current value of i. Null before init / after conceptual clear.
+  final int? i;
   final List<String> output;
 
-  /// Active slot in the visualized sequence (range values).
+  /// Which square is the "now" square (0, 1, 2…).
   final int? focusIndex;
 
-  /// Variable that just changed (pulse highlight).
-  final String? changed;
-
-  final Comparison? comparison;
-
-  /// Loop machine focus: range | next | assign | body | done
-  final String? machineFocus;
+  /// e.g. "0 < 3" shown during condition checks.
+  final String? conditionText;
+  final bool? conditionPass;
 }
 
 class CodeExample {
   const CodeExample({
     required this.id,
-    required this.title,
-    required this.subtitle,
-    required this.description,
     required this.language,
-    required this.code,
+    required this.title,
+    required this.initLabel,
+    required this.conditionLabel,
+    required this.incrementLabel,
+    required this.bodyLabel,
+    required this.limit,
     required this.steps,
-    required this.sequenceLabel,
-    required this.sequence,
   });
 
   final String id;
-  final String title;
-  final String subtitle;
-  final String description;
   final String language;
-  final List<String> code;
+  final String title;
+
+  /// The three classic for parts, shown as placeholders.
+  final String initLabel; // e.g. int i = 0
+  final String conditionLabel; // e.g. i < 3
+  final String incrementLabel; // e.g. i++
+  final String bodyLabel; // e.g. print(i) / cout << i
+
+  /// Exclusive upper bound — squares are 0 .. limit-1
+  final int limit;
   final List<ExecutionStep> steps;
-  final String sequenceLabel;
-  final List<Object> sequence;
+
+  List<int> get squares => List.generate(limit, (n) => n);
 }

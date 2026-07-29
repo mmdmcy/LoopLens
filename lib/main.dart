@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import 'data/examples.dart';
 import 'models/execution_step.dart';
 import 'state/player_controller.dart';
 import 'theme/app_theme.dart';
-import 'widgets/code_panel.dart';
-import 'widgets/console_panel.dart';
-import 'widgets/loop_machine.dart';
-import 'widgets/narration_panel.dart';
+import 'widgets/for_stage.dart';
 import 'widgets/player_controls.dart';
-import 'widgets/sequence_track.dart';
-import 'widgets/variable_panel.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,11 +36,40 @@ class Workspace extends StatefulWidget {
 
 class _WorkspaceState extends State<Workspace> {
   late final PlayerController _player = PlayerController();
+  final FocusNode _focus = FocusNode();
 
   @override
   void dispose() {
+    _focus.dispose();
     _player.dispose();
     super.dispose();
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.arrowRight ||
+        key == LogicalKeyboardKey.keyD) {
+      _player.stepForward();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.keyA) {
+      _player.stepBack();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.space) {
+      _player.togglePlay();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.keyR) {
+      _player.reset();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -53,130 +79,53 @@ class _WorkspaceState extends State<Workspace> {
       builder: (context, _) {
         final ex = _player.example;
         final step = _player.step;
-        final exhausted = step.machineFocus == 'done';
 
-        return Scaffold(
-          body: Column(
-            children: [
-              _TitleBar(
-                title: ex.title,
-                subtitle: ex.subtitle,
-                stepLabel: step.phase.label,
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final stacked = constraints.maxWidth < 980;
-                      if (stacked) {
-                        return Column(
-                          children: [
-                            Expanded(flex: 3, child: _leftColumn(ex, step)),
-                            const SizedBox(height: 8),
-                            Expanded(flex: 4, child: _rightColumn(ex, step, exhausted)),
-                          ],
-                        );
-                      }
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(flex: 5, child: _leftColumn(ex, step)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 7,
-                            child: _rightColumn(ex, step, exhausted),
-                          ),
-                        ],
-                      );
+        return Focus(
+          focusNode: _focus,
+          autofocus: true,
+          onKeyEvent: _onKey,
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => _focus.requestFocus(),
+            child: Scaffold(
+              body: Column(
+                children: [
+                  _TopBar(
+                    example: ex,
+                    onSelect: (next) {
+                      _player.load(next);
+                      _focus.requestFocus();
                     },
                   ),
-                ),
+                  Expanded(child: ForStage(example: ex, step: step)),
+                  PlayerControls(
+                    controller: _player,
+                    onInteract: () => _focus.requestFocus(),
+                  ),
+                ],
               ),
-              PlayerControls(controller: _player),
-            ],
+            ),
           ),
         );
       },
     );
   }
-
-  Widget _leftColumn(CodeExample ex, ExecutionStep step) {
-    return Column(
-      children: [
-        Expanded(
-          flex: 5,
-          child: CodePanel(
-            lines: ex.code,
-            activeLine: step.line,
-            language: ex.language,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          flex: 4,
-          child: NarrationPanel(step: step),
-        ),
-      ],
-    );
-  }
-
-  Widget _rightColumn(CodeExample ex, ExecutionStep step, bool exhausted) {
-    return Column(
-      children: [
-        SizedBox(
-          height: 128,
-          child: LoopMachine(focus: step.machineFocus),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          flex: 3,
-          child: SequenceTrack(
-            label: ex.sequenceLabel,
-            values: ex.sequence,
-            focusIndex: step.focusIndex,
-            exhausted: exhausted,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          flex: 3,
-          child: Row(
-            children: [
-              Expanded(
-                child: VariablePanel(
-                  variables: step.variables,
-                  changed: step.changed,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ConsolePanel(lines: step.output),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 }
 
-class _TitleBar extends StatelessWidget {
-  const _TitleBar({
-    required this.title,
-    required this.subtitle,
-    required this.stepLabel,
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.example,
+    required this.onSelect,
   });
 
-  final String title;
-  final String subtitle;
-  final String stepLabel;
+  final CodeExample example;
+  final ValueChanged<CodeExample> onSelect;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: const BoxDecoration(
         color: AppColors.gutter,
         border: Border(bottom: BorderSide(color: AppColors.panelEdge)),
@@ -187,37 +136,50 @@ class _TitleBar extends StatelessWidget {
             'LoopLens',
             style: AppTheme.ui(
               size: 13,
-              weight: FontWeight.w700,
+              weight: FontWeight.w600,
               color: AppColors.text,
             ),
           ),
-          Container(
-            width: 1,
-            height: 16,
-            margin: const EdgeInsets.symmetric(horizontal: 12),
-            color: AppColors.panelEdge,
-          ),
-          Text(title, style: AppTheme.mono(size: 13, color: AppColors.active)),
-          const SizedBox(width: 10),
-          Text(subtitle, style: AppTheme.ui(size: 12, color: AppColors.dim)),
-          const Spacer(),
-          Text(
-            'phase',
-            style: AppTheme.ui(size: 11, color: AppColors.dim),
-          ),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.panelEdge),
-              color: AppColors.panel,
+          const SizedBox(width: 20),
+          for (final ex in allExamples) ...[
+            _LangTab(
+              label: ex.language,
+              selected: ex.id == example.id,
+              onTap: () => onSelect(ex),
             ),
-            child: Text(
-              stepLabel,
-              style: AppTheme.mono(size: 11, color: AppColors.accent),
-            ),
-          ),
+            const SizedBox(width: 4),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _LangTab extends StatelessWidget {
+  const _LangTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Text(
+          label,
+          style: AppTheme.ui(
+            size: 13,
+            weight: selected ? FontWeight.w600 : FontWeight.w400,
+            color: selected ? AppColors.text : AppColors.dim,
+          ),
+        ),
       ),
     );
   }
